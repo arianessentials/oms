@@ -36,6 +36,13 @@ export class OrdersService {
         });
     }
 
+    findArchived(): Promise<Order[]> {
+        return this.ordersRepository.find({
+            where: { isArchived: true },
+            relations: ['orderItems', 'orderItems.product'],
+        });
+    }
+
     async create(dto: CreateOrderDto): Promise<Order> {
         if (!dto.orderItems?.length) throw new Error('Missing order items');
         if (!dto.address) throw new Error('Missing address');
@@ -70,12 +77,15 @@ export class OrdersService {
     }
 
     async updateStatus(id: number, status: OrderStatus): Promise<void> {
-        const result = await this.ordersRepository.update(id, { status });
+        const isArchived = status === OrderStatus.CANCELLED || status === OrderStatus.COMPLETE;
+
+        const result = await this.ordersRepository.update(id, { status, isArchived });
 
         if (result.affected === 0) {
             throw new NotFoundException(`Order with ID ${id} not found`);
         }
     }
+
 
 
     async delete(id: number): Promise<void> {

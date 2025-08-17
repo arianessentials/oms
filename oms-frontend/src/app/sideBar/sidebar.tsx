@@ -13,6 +13,7 @@ const drawerWidth = 240;
 const navItems = [
     { label: 'Dashboard', href: '/' },
     { label: 'Orders', href: '/orders' },
+    { label: 'Archive', href: '/archive' },
     { label: 'Create Order', href: '/orders/create-order' },
     { label: 'Products', href: '/products' },
 ];

@@ -38,6 +38,20 @@ export function useOrders() {
         }
     };
 
+    const fetchArchivedOrders = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.get<OrderRow[]>(`${BACKEND_URL}/orders/archived`);
+            setRows(response.data);
+        } catch (err) {
+            setError(err as Error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
     const handleProductSelectChange = (event: any, products: Product[]) => {
         const selectedIds = event.target.value as number[];
 
@@ -57,6 +71,7 @@ export function useOrders() {
                     id: product.id, // Temporary ID for new items
                     product: product,
                     price: product.price,
+                    quantity: 0
                 } as OrderItem;
             })
             .filter(Boolean) as OrderItem[];
@@ -164,6 +179,7 @@ export function useOrders() {
         handleProductSelectChange,
         handleQuantityChange,
         selectedProductIds,
+        fetchArchivedOrders,
         calculateTotalAmount,
     };
 }

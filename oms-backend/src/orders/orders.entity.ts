@@ -9,9 +9,9 @@ import { OrderItem } from './order-item.entity';
 
 export enum OrderStatus {
     PENDING = 'pending',
-    PACKAGEING = 'packageing',
+    PACKAGING = 'packaging',
     DELIVERING = 'delivering',
-    COMPLETED = 'completed',
+    COMPLETE = 'complete',
     CANCELLED = 'cancelled',
 }
 
@@ -38,6 +38,9 @@ export class Order {
 
     @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING, })
     status: OrderStatus;
+
+    @Column()
+    isArchived: boolean;
 
     @CreateDateColumn()
     createdAt: Date;
