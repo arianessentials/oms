@@ -1,6 +1,7 @@
 import { OrderItem, OrderRow, Product } from "@/app/interfaces/data";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { OrderStatus } from "@/app/interfaces/data";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -97,6 +98,28 @@ export function useOrders() {
         }
     };
 
+    const updateOrderStatus = async (id: number, status: OrderStatus) => {
+        const originalRows = [...rows];
+        setRows(prevRows =>
+            prevRows.map(row => (row.id === id ? { ...row, status: status } : row))
+        );
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.patch<OrderRow>(
+                `${BACKEND_URL}/orders/${id}`,
+                { status }
+            );
+            setRows(prevRows =>
+                prevRows.map(row => (row.id === id ? response.data : row))
+            );
+        } catch (err) {
+            setError(err as Error);
+            setRows(originalRows);
+        } finally {
+            setLoading(false);
+        }
+    }
 
 
     const handleQuantityChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, orderItemId: number) => {
@@ -137,6 +160,7 @@ export function useOrders() {
         createOrder,
         formData,
         handleChange,
+        updateOrderStatus,
         handleProductSelectChange,
         handleQuantityChange,
         selectedProductIds,

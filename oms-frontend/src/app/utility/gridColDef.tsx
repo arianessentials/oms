@@ -1,7 +1,9 @@
-import { Chip } from "@mui/material";
+import { Chip, MenuItem, Select } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
 import { getStatusColor } from "./statusUi";
 import { getOrderDateColor } from "./dateUi";
+import { useOrders } from "../hooks/orderHooks/useOrder";
+import { OrderStatus, ORDER_STATUSES } from "../interfaces/data";
 
 export const columns: GridColDef[] = [
     { field: 'id', headerName: 'Order ID', width: 90 },
@@ -25,16 +27,32 @@ export const columns: GridColDef[] = [
         renderCell: (params) => <Chip label={`$${params.row.totalAmount}`} variant="outlined" />,
     },
     {
-        field: 'status',
-        headerName: 'Status',
-        width: 150,
-        renderCell: (params) => (
-            <Chip
-                label={params.row.status}
-                color={getStatusColor(params.row.status)}
-                variant="filled"
-            />
-        ),
+        field: "status",
+        headerName: "Status",
+        width: 200,
+        renderCell: (params) => {
+            const { updateOrderStatus, loading } = useOrders();
+            return (
+                <Select<OrderStatus>
+                    value={params.row.status}
+                    onChange={(e) =>
+                        updateOrderStatus(params.row.id, e.target.value as OrderStatus)
+                    }
+                    size="small"
+                    disabled={loading}
+                >
+                    {ORDER_STATUSES.map((status) => (
+                        <MenuItem key={status} value={status}>
+                            <Chip
+                                label={status}
+                                color={getStatusColor(status)}
+                                variant="filled"
+                            />
+                        </MenuItem>
+                    ))}
+                </Select>
+            );
+        },
     },
     {
         field: 'address',
