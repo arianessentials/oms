@@ -15,12 +15,23 @@ import {
     ButtonGroup
 } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
-import { useProducts } from '@/app/hooks/productHooks/useProducts';
-import 'glightbox/dist/css/glightbox.min.css';
+import { Product } from '@/app/interfaces/data';
 import GLightbox from 'glightbox';
+import 'glightbox/dist/css/glightbox.min.css';
 
-export default function ProductList() {
-    const { products, loading, error, deleteProductById } = useProducts();
+interface ProductListProps {
+    products: Product[];
+    loading: boolean;
+    error: Error | null;
+    deleteProductById: (id: number) => void;
+}
+
+export default function ProductList({
+    products,
+    loading,
+    error,
+    deleteProductById,
+}: ProductListProps) {
     const [showKHR, setShowKHR] = useState(false);
 
     const toggleCurrency = () => setShowKHR(prev => !prev);

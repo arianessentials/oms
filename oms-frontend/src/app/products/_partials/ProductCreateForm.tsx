@@ -1,9 +1,22 @@
 import React from 'react';
 import { Box, TextField, Button, Typography, Container, CircularProgress } from '@mui/material';
-import { useProducts } from '../../hooks/productHooks/useProducts';
+import { Product } from '@/app/interfaces/data';
 
-function ProductCreateForm() {
-    const { formData, handleChange, createProducts, loading, error } = useProducts();
+interface ProductCreateFormProps {
+    formData: Partial<Product>;
+    handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    createProducts: () => Promise<void>;
+    loading: boolean;
+    error: Error | null;
+}
+
+function ProductCreateForm({
+    formData,
+    handleChange,
+    createProducts,
+    loading,
+    error
+}: ProductCreateFormProps) {
 
     const handleSubmit = (e: any) => {
         e.preventDefault();
