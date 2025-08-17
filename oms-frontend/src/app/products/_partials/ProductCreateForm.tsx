@@ -32,7 +32,7 @@ function ProductCreateForm() {
                 <TextField
                     label="Product Name"
                     name="name"
-                    value={formData.name}
+                    value={formData.name ?? ""}  // controlled
                     onChange={handleChange}
                     required
                     fullWidth
@@ -41,7 +41,7 @@ function ProductCreateForm() {
                 <TextField
                     label="Description"
                     name="description"
-                    value={formData.description}
+                    value={formData.description ?? ""}  // controlled
                     onChange={handleChange}
                     multiline
                     rows={4}
@@ -51,7 +51,7 @@ function ProductCreateForm() {
                 <TextField
                     label="Price"
                     name="price"
-                    value={formData.price}
+                    value={formData.price ?? ""}  // controlled
                     onChange={handleChange}
                     fullWidth
                 />

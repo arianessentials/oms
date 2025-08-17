@@ -10,12 +10,13 @@ export function useProducts() {
     const [error, setError] = useState<Error | null>(null);
     const [products, setProducts] = useState<Product[]>([]);
 
-    // handle input changes
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
     };
-
     // fetch products
     const fetchProducts = async () => {
         setLoading(true);
@@ -36,8 +37,8 @@ export function useProducts() {
         setError(null);
         try {
             await axios.post<Product>(`${BACKEND_URL}/products`, formData);
-            setFormData({}); // optional: clear form
             await fetchProducts(); // ✅ refetch after creation
+            setFormData({}); // optional: clear form
         } catch (err: any) {
             setError(new Error(err.response?.data?.message || err.message));
         } finally {
