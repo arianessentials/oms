@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Order } from './orders.entity';
+import { Order, OrderStatus } from './orders.entity';
 import { OrderItem } from './order-item.entity';
 import { Product } from 'src/products/products.entity';
 
@@ -68,6 +68,15 @@ export class OrdersService {
 
         return this.ordersRepository.save(order);
     }
+
+    async updateStatus(id: number, status: OrderStatus): Promise<void> {
+        const result = await this.ordersRepository.update(id, { status });
+
+        if (result.affected === 0) {
+            throw new NotFoundException(`Order with ID ${id} not found`);
+        }
+    }
+
 
     async delete(id: number): Promise<void> {
         if (!id) {

@@ -1,13 +1,17 @@
-import { Controller, Get, Param, Delete, Post, Body } from '@nestjs/common';
+import { Controller, Get, Param, Delete, Post, Body, Put } from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { Order } from './orders.entity';
+import { Order, OrderStatus } from './orders.entity';
+
+export class UpdateStatusDto {
+    status: OrderStatus;
+}
+
 
 export class CreateOrderDto {
     address: string;
     phone: string;
     orderItems: { productId: number; quantity: number }[];
 }
-
 
 @Controller('/orders')
 export class OrdersController {
@@ -28,12 +32,20 @@ export class OrdersController {
     @Post()
     async create(@Body() dto: CreateOrderDto) {
         try {
-            console.log('Received order request:', dto);
             return await this.ordersService.create(dto);
         } catch (err) {
             console.error('Error creating order:', err.message);
             throw new Error('Failed to create order: ' + err.message);
         }
+    }
+
+    @Put(':id')
+    async updateStatus(
+        @Param('id') id: number,
+        @Body() dto: UpdateStatusDto
+    ) {
+        await this.ordersService.updateStatus(id, dto.status);
+        return { message: `Order ${id} status updated to ${dto.status}` };
     }
 
 
