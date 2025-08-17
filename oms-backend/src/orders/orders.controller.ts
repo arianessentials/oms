@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Delete, Post, Body, Put } from '@nestjs/common';
+import { Controller, Get, Param, Delete, Post, Body, Patch } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { Order, OrderStatus } from './orders.entity';
 
@@ -39,7 +39,7 @@ export class OrdersController {
         }
     }
 
-    @Put(':id')
+    @Patch(':id')
     async updateStatus(
         @Param('id') id: number,
         @Body() dto: UpdateStatusDto
