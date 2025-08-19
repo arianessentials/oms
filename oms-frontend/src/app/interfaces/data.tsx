@@ -10,6 +10,7 @@ export interface OrderRow {
     status: OrderStatus;
     address: string;
     phone: string;
+    isArchived?: boolean;
     createdAt: string;
 }
 

@@ -29,6 +29,12 @@ export class OrdersController {
         return this.ordersService.findOne((id));
     }
 
+    // GET /archived
+    @Get('/orders/archived')
+    getArchivedOrders() {
+        return this.ordersService.findArchived();
+    }
+
     @Post()
     async create(@Body() dto: CreateOrderDto) {
         try {
