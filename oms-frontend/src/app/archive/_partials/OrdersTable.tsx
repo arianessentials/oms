@@ -1,10 +1,10 @@
-'use client';
+// src/components/_partials/OrdersTable.tsx
 
 import React from 'react';
 import Box from '@mui/material/Box';
 import { DataGrid } from '@mui/x-data-grid';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { columns } from '@/app/utility/gridColDef';
+import { Acolumns } from '@/app/utility/gridColDef';
 
 const theme = createTheme();
 
@@ -22,8 +22,9 @@ export default function OrdersTable({ loading, error, rows }: OrdersTableProps) 
         <ThemeProvider theme={theme}>
             <Box sx={{ width: '80vw' }}>
                 <DataGrid
+                    key={JSON.stringify(rows.map(row => row.id))}
                     rows={rows}
-                    columns={columns}
+                    columns={Acolumns}
                     getRowId={(row) => row.id}
                     initialState={{
                         pagination: { paginationModel: { pageSize: 10 } },

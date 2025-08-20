@@ -1,4 +1,4 @@
-'use client';
+// src/components/_partials/OrdersTable.tsx
 
 import React from 'react';
 import Box from '@mui/material/Box';
@@ -22,6 +22,7 @@ export default function OrdersTable({ loading, error, rows }: OrdersTableProps) 
         <ThemeProvider theme={theme}>
             <Box sx={{ width: '80vw' }}>
                 <DataGrid
+                    key={JSON.stringify(rows.map(row => row.id))}
                     rows={rows}
                     columns={columns}
                     getRowId={(row) => row.id}

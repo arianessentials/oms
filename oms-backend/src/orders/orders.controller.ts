@@ -6,7 +6,6 @@ export class UpdateStatusDto {
     status: OrderStatus;
 }
 
-
 export class CreateOrderDto {
     address: string;
     phone: string;
@@ -23,16 +22,16 @@ export class OrdersController {
         return this.ordersService.findAll();
     }
 
+    // GET /orders/archived  
+    @Get('archived')
+    getArchivedOrders() {
+        return this.ordersService.findArchived();
+    }
+
     // GET /orders/:id
     @Get(':id')
     findOne(@Param('id') id: number): Promise<Order | null> {
         return this.ordersService.findOne((id));
-    }
-
-    // GET /archived
-    @Get('/orders/archived')
-    getArchivedOrders() {
-        return this.ordersService.findArchived();
     }
 
     @Post()
@@ -53,7 +52,6 @@ export class OrdersController {
         await this.ordersService.updateStatus(id, dto.status);
         return { message: `Order ${id} status updated to ${dto.status}` };
     }
-
 
     // DELETE /orders/:id
     @Delete(':id')

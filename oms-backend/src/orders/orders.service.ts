@@ -25,7 +25,10 @@ export class OrdersService {
     ) { }
 
     findAll(): Promise<Order[]> {
-        return this.ordersRepository.find({ relations: ['orderItems', 'orderItems.product'] });
+        return this.ordersRepository.find({
+            where: { isArchived: false },
+            relations: ['orderItems', 'orderItems.product']
+        });
     }
 
     findOne(id: number): Promise<Order | null> {
@@ -75,12 +78,21 @@ export class OrdersService {
             totalAmount,
         });
 
-        return this.ordersRepository.save(order);
+        // Save the order first
+        const savedOrder = await this.ordersRepository.save(order);
+
+        // Notify Telegram, but errors won't stop the order creation
+        this.telegramService.notifyNewOrder(savedOrder).catch(err => {
+        });
+
+        return savedOrder;
     }
 
     async updateStatus(id: number, status: OrderStatus): Promise<void> {
         const order = await this.findOne(id);
-        if (!order) throw new NotFoundException(`Order with ID ${id} not found`);
+        if (!order) {
+            throw new NotFoundException(`Order with ID ${id} not found`);
+        }
 
         const isArchived = status === OrderStatus.CANCELLED || status === OrderStatus.COMPLETE;
         order.status = status;

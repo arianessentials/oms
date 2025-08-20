@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Bot } from 'grammy';
-import { Order } from '../orders.entity';
+import fetch, { RequestInit } from 'node-fetch';
+import { Agent } from 'https';
+import { Order, OrderStatus } from '../orders.entity';
 
 @Injectable()
 export class TelegramService {
@@ -14,24 +16,62 @@ export class TelegramService {
         if (!BOT_TOKEN) throw new Error("BOT_TOKEN missing!");
         if (!GROUP_CHAT_ID) throw new Error("GROUP_CHAT_ID missing!");
 
-        this.bot = new Bot(BOT_TOKEN);
+        const agent = new Agent({ family: 4 }); // force IPv4
+
+        this.bot = new Bot(BOT_TOKEN, {
+            client: {
+                fetch: (url: string, options?: RequestInit) => fetch(url, { ...options, agent })
+            }
+        });
+
         this.chatId = GROUP_CHAT_ID;
     }
 
     async sendMessage(message: string) {
-        await this.bot.api.sendMessage(this.chatId, message);
+        try {
+            await this.bot.api.sendMessage(this.chatId, message, { parse_mode: "HTML" });
+        } catch (err) {
+            console.error("Telegram sendMessage failed:", err.message);
+        }
+
+
+    } private getStatusLabel(status: OrderStatus): string {
+        switch (status) {
+            case OrderStatus.PENDING: return "🟡 Pending";
+            case OrderStatus.PACKAGING: return "📦 Packaging";
+            case OrderStatus.DELIVERING: return "🚚 Delivering";
+            case OrderStatus.COMPLETE: return "✅ Complete";
+            case OrderStatus.CANCELLED: return "❌ Cancelled";
+            default: return status;
+        }
     }
 
     async notifyStatusChange(order: Order) {
         const message = `
-Order #${order.id} status updated!
-Status: ${order.status}
-Total: $${order.totalAmount}
-Address: ${order.address}
-Phone: ${order.phone}
-Created: ${order.createdAt.toLocaleString()}
+<b>Order #${order.id} status updated!</b>
+<b>Status:</b> ${this.getStatusLabel(order.status)}
+<b>Total:</b> $${order.totalAmount}
+<b>Address:</b> ${order.address}
+<b>Phone:</b> ${order.phone}
+<b>Created:</b> ${order.createdAt.toLocaleString()}
         `;
-        // Call the local sendMessage method
         await this.sendMessage(message);
     }
+    async notifyNewOrder(order: Order) {
+        const itemsText = order.orderItems
+            .map(item => `${item.product.name} x ${item.quantity} = $${item.totalAmount}`)
+            .join('\n');
+
+        const message = `
+<b>New Order Received!</b>
+<b>Address:</b> ${order.address}
+<b>Phone:</b> ${order.phone}
+<b>Items:</b>
+${itemsText}
+<b>Total:</b> $${order.totalAmount}
+    `;
+
+        await this.sendMessage(message);
+    }
+
 }

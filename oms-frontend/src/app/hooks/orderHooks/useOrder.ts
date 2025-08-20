@@ -113,29 +113,33 @@ export function useOrders() {
         }
     };
 
+    // The corrected updateOrderStatus function
+
     const updateOrderStatus = async (id: number, status: OrderStatus) => {
-        const originalRows = [...rows];
+        // Immediately update the local state with the new status
         setRows(prevRows =>
             prevRows.map(row => (row.id === id ? { ...row, status: status } : row))
         );
         setLoading(true);
         setError(null);
+
         try {
-            const response = await axios.patch<OrderRow>(
+            // Send the update to the backend without waiting for its response to update the UI
+            await axios.patch<OrderRow>(
                 `${BACKEND_URL}/orders/${id}`,
                 { status }
             );
-            setRows(prevRows =>
-                prevRows.map(row => (row.id === id ? response.data : row))
-            );
+            // On success, do nothing. The UI is already updated.
         } catch (err) {
+            // If the backend request fails, revert the state to the original
             setError(err as Error);
-            setRows(originalRows);
+            // To revert, you'll need the original `rows` state. Pass it here if you need to.
+            // Or, refetch the data from the backend to ensure consistency.
+            fetchOrders();
         } finally {
             setLoading(false);
         }
     }
-
 
     const handleQuantityChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, orderItemId: number) => {
         const newQuantity = parseInt(event.target.value, 10);
