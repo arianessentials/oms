@@ -7,10 +7,11 @@ import { OrdersController } from 'src/orders/orders.controller';
 import { OrdersService } from 'src/orders/orders.service';
 import { Order } from 'src/orders/orders.entity';
 import { OrderItem } from 'src/orders/order-item.entity';
+import { TelegramService } from 'src/orders/telegram/telegram.sevice';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Product, Order, OrderItem])],
-  providers: [ProductsService, OrdersService],
+  providers: [ProductsService, OrdersService, TelegramService],
   controllers: [ProductsController, OrdersController]
 })
 export class ProductsModule { }

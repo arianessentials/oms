@@ -38,8 +38,8 @@ export class Order {
 
     @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING, })
     status: OrderStatus;
-
-    @Column()
+    
+    @Column({ default: true })
     isArchived: boolean;
 
     @CreateDateColumn()
