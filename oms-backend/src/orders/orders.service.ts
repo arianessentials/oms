@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Order, OrderStatus } from './orders.entity';
 import { OrderItem } from './order-item.entity';
 import { Product } from 'src/products/products.entity';
+import { TelegramService } from './telegram/telegram.sevice';
 
 export class CreateOrderDto {
     orderItems: { productId: number; quantity: number }[];
@@ -20,6 +21,7 @@ export class OrdersService {
         private productsRepository: Repository<Product>,
         @InjectRepository(OrderItem)
         private orderItemsRepository: Repository<OrderItem>,
+        private readonly telegramService: TelegramService
     ) { }
 
     findAll(): Promise<Order[]> {
@@ -77,14 +79,19 @@ export class OrdersService {
     }
 
     async updateStatus(id: number, status: OrderStatus): Promise<void> {
+        const order = await this.findOne(id);
+        if (!order) throw new NotFoundException(`Order with ID ${id} not found`);
+
         const isArchived = status === OrderStatus.CANCELLED || status === OrderStatus.COMPLETE;
+        order.status = status;
+        order.isArchived = isArchived;
 
-        const result = await this.ordersRepository.update(id, { status, isArchived });
+        await this.ordersRepository.save(order);
 
-        if (result.affected === 0) {
-            throw new NotFoundException(`Order with ID ${id} not found`);
-        }
+        // notify bot 
+        await this.telegramService.notifyStatusChange(order);
     }
+
 
 
 
