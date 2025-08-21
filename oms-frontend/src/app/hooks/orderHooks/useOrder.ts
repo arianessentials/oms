@@ -5,26 +5,77 @@ import { OrderStatus } from "@/app/interfaces/data";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-export function useOrders() {
-    const [formData, setFormData] = useState<Partial<OrderRow>>({
-        orderItems: [],
-        address: '',
-        phone: '',
-    });
+// Initial form state
+const INITIAL_FORM: Partial<OrderRow> = {
+    orderItems: [],
+    address: '',
+    phone: ''
+};
 
+export function useOrders() {
+    const [formData, setFormData] = useState<Partial<OrderRow>>({ ...INITIAL_FORM });
     const [rows, setRows] = useState<OrderRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
+    const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    // Input change for normal text/number fields
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value ?? '' }));
+    };
 
-        setFormData((prev) => ({
+    // Textarea/multiline change
+    const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value ?? '' }));
+    };
+
+    // Quantity input change
+    const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>, orderItemId: number) => {
+        const value = e.target.value;
+        const quantity = value === '' ? 0 : parseInt(value, 10);
+
+        setFormData(prev => ({
             ...prev,
-            [name]: value,
+            orderItems: (prev.orderItems ?? []).map(item =>
+                item.id === orderItemId ? { ...item, quantity: isNaN(quantity) ? 0 : quantity } : item
+            )
         }));
     };
 
+    // Multi-select products
+    const handleProductSelectChange = (event: any, products: Product[]) => {
+        const selectedIds = event.target.value as number[];
+        setSelectedProductIds(selectedIds);
+
+        // Keep existing items still selected
+        const updatedOrderItems = (formData.orderItems ?? []).filter(item =>
+            selectedIds.includes(item.product.id)
+        );
+
+        // Add new items
+        const newItems = selectedIds
+            .filter(id => !updatedOrderItems.some(item => item.product.id === id))
+            .map(id => {
+                const product = products.find(p => p.id === id);
+                if (!product) return null;
+                return { id: product.id, product, price: product.price, quantity: 0 } as OrderItem;
+            })
+            .filter(Boolean) as OrderItem[];
+
+        setFormData(prev => ({
+            ...prev,
+            orderItems: [...updatedOrderItems, ...newItems]
+        }));
+    };
+
+    // Calculate total amount
+    const calculateTotalAmount = (): number => {
+        return (formData.orderItems ?? []).reduce((total, item) => total + item.price * item.quantity, 0);
+    };
+
+    // Fetch orders
     const fetchOrders = async () => {
         setLoading(true);
         setError(null);
@@ -51,38 +102,7 @@ export function useOrders() {
         }
     };
 
-
-    const handleProductSelectChange = (event: any, products: Product[]) => {
-        const selectedIds = event.target.value as number[];
-
-        // Filter out items that are no longer selected
-        const updatedOrderItems = (formData.orderItems ?? []).filter(item =>
-            selectedIds.includes(item.product.id)
-        );
-
-        // Add new items with a default quantity of 1
-        const newItems = selectedIds
-            .filter(id => !updatedOrderItems.some(item => item.product.id === id))
-            .map(id => {
-                const product = products.find(p => p.id === id);
-                if (!product) return null;
-
-                return {
-                    id: product.id, // Temporary ID for new items
-                    product: product,
-                    price: product.price,
-                    quantity: 0
-                } as OrderItem;
-            })
-            .filter(Boolean) as OrderItem[];
-
-        // Update form data with new order items
-        setFormData(prev => ({
-            ...prev,
-            orderItems: [...updatedOrderItems, ...newItems],
-        }));
-    };
-
+    // Create order
     const createOrder = async () => {
         setLoading(true);
         setError(null);
@@ -90,82 +110,38 @@ export function useOrders() {
             const payload = {
                 ...formData,
                 orderItems: (formData.orderItems ?? []).map(item => ({
-                    productId: (item.product?.id),
+                    productId: item.product.id,
                     quantity: item.quantity
                 }))
             };
 
-            const response = await axios.post<OrderRow>(
-                `${BACKEND_URL}/orders`,
-                payload
-            );
-            console.log('Order created:', response.data);
-            setFormData({});
+            await axios.post<OrderRow>(`${BACKEND_URL}/orders`, payload);
 
+            // Reset form
+            setFormData({ ...INITIAL_FORM });
+            setSelectedProductIds([]);
         } catch (err) {
-            if (axios.isAxiosError(err)) {
-                setError(new Error(err.response?.data?.message || err.message));
-            } else {
-                setError(err as Error);
-            }
+            if (axios.isAxiosError(err)) setError(new Error(err.response?.data?.message || err.message));
+            else setError(err as Error);
         } finally {
             setLoading(false);
         }
     };
 
-    // The corrected updateOrderStatus function
-
+    // Update order status
     const updateOrderStatus = async (id: number, status: OrderStatus) => {
-        // Immediately update the local state with the new status
-        setRows(prevRows =>
-            prevRows.map(row => (row.id === id ? { ...row, status: status } : row))
-        );
+        setRows(prevRows => prevRows.map(row => row.id === id ? { ...row, status } : row));
         setLoading(true);
         setError(null);
-
         try {
-            // Send the update to the backend without waiting for its response to update the UI
-            await axios.patch<OrderRow>(
-                `${BACKEND_URL}/orders/${id}`,
-                { status }
-            );
-            // On success, do nothing. The UI is already updated.
+            await axios.patch<OrderRow>(`${BACKEND_URL}/orders/${id}`, { status });
         } catch (err) {
-            // If the backend request fails, revert the state to the original
             setError(err as Error);
-            // To revert, you'll need the original `rows` state. Pass it here if you need to.
-            // Or, refetch the data from the backend to ensure consistency.
-            fetchOrders();
+            fetchOrders(); // revert if backend fails
         } finally {
             setLoading(false);
         }
-    }
-
-    const handleQuantityChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, orderItemId: number) => {
-        const newQuantity = parseInt(event.target.value, 10);
-
-        if (!isNaN(newQuantity) && newQuantity > 0) {
-            setFormData(prev => ({
-                ...prev,
-                orderItems: (prev.orderItems ?? []).map(item =>
-                    item.id === orderItemId
-                        ? { ...item, quantity: newQuantity }
-                        : item
-                ),
-            }));
-        }
     };
-
-    const calculateTotalAmount = (): number => {
-        return (formData.orderItems ?? []).reduce((total, item) => {
-            const itemPrice = item.price;
-            return total + (itemPrice * item.quantity);
-        }, 0);
-    };
-
-
-    // Get selected product IDs for the multi-select component
-    const selectedProductIds = (formData.orderItems || []).map(item => item.product.id);
 
     useEffect(() => {
         fetchOrders();
@@ -175,15 +151,16 @@ export function useOrders() {
         rows,
         loading,
         error,
-        fetchOrders,
-        createOrder,
         formData,
-        handleChange,
-        updateOrderStatus,
-        handleProductSelectChange,
-        handleQuantityChange,
         selectedProductIds,
+        handleChange,
+        handleTextareaChange,
+        handleQuantityChange,
+        handleProductSelectChange,
+        createOrder,
+        updateOrderStatus,
+        fetchOrders,
         fetchArchivedOrders,
-        calculateTotalAmount,
+        calculateTotalAmount
     };
 }
