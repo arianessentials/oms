@@ -39,7 +39,7 @@ export class Order {
     @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING, })
     status: OrderStatus;
     
-    @Column({ default: true })
+    @Column({ default: false })
     isArchived: boolean;
 
     @CreateDateColumn()
