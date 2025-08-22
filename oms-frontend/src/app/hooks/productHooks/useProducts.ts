@@ -12,6 +12,18 @@ export function useProducts() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
+
+        if (name === "price") {
+            // ✅ Allow only positive integers or floats (no negatives)
+            if (!/^\d*\.?\d*$/.test(value)) return;
+
+            const numericValue = parseFloat(value);
+            if (numericValue > 10000) return;
+
+            // Continue with your logic
+        }
+
+
         setFormData((prev) => ({
             ...prev,
             [name]: value,
